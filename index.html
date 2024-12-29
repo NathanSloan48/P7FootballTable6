@@ -1,0 +1,315 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P7 FOOTBALL TABLE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .button-container {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        #password-section {
+            margin-bottom: 20px;
+        }
+        #edit-section {
+            display: none;
+            margin-top: 20px;
+        }
+        #note {
+            font-size: 0.8em;
+            color: grey;
+        }
+        #footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        #footer span {
+            font-size: 2em;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>P7 FOOTBALL TABLE <span id="note">NOTE, THIS ONLY WORKS IN GOOGLE CHROME.</span></h1>
+
+    <!-- Password Input Section (For enabling editing) -->
+    <div id="password-section">
+        <label for="password-input">Enter Password to Edit: </label>
+        <input type="password" id="password-input" placeholder="Enter password">
+        <button onclick="checkPassword()">Enter</button>
+        <p id="error-message" style="color: red; display: none;">Incorrect password! Try again.</p>
+    </div>
+
+    <!-- Table (Visible to Everyone) -->
+    <div id="table-section">
+        <table id="editable-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Team</th>
+                    <th>Played</th>
+                    <th>Won</th>
+                    <th>Drawn</th>
+                    <th>Lost</th>
+                    <th>Goals For</th>
+                    <th>Goals Against</th>
+                    <th>Goal Difference</th>
+                    <th>Points</th>
+                    <th id="action-column-header" style="display: none;">Actions</th> <!-- Hide Actions column by default -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Initial Data Rows -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Editable Section (Initially Hidden, Becomes Visible After Correct Password) -->
+    <div id="edit-section">
+        <div class="button-container">
+            <button onclick="addRow()">Add Team</button>
+            <button onclick="saveTable()">Save Table</button>
+        </div>
+    </div>
+
+    <script>
+        const correctPassword = "astrolovesfootball1"; // Correct password
+
+        // Load table data from localStorage on page load
+        window.onload = function() {
+            loadTableData();
+        };
+
+        // Function to check password input
+        function checkPassword() {
+            const passwordInput = document.getElementById("password-input").value;
+            const errorMessage = document.getElementById("error-message");
+            const passwordSection = document.getElementById("password-section");
+            const editSection = document.getElementById("edit-section");
+            const tableSection = document.getElementById("table-section");
+            const actionColumnHeader = document.getElementById("action-column-header");
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            const editButtons = document.querySelectorAll('.edit-btn');
+
+            // Check if the password is correct
+            if (passwordInput === correctPassword) {
+                // Hide the password input section
+                passwordSection.style.display = "none";
+                // Show the editable section
+                editSection.style.display = "block";
+                // Show the Action column header
+                actionColumnHeader.style.display = "table-cell";  // Show Actions column header
+                // Enable delete buttons for each row
+                deleteButtons.forEach(button => {
+                    button.style.display = "inline-block"; // Show delete buttons
+                });
+                // Enable edit buttons for each row
+                editButtons.forEach(button => {
+                    button.style.display = "inline-block"; // Show edit buttons
+                });
+                // Hide error message
+                errorMessage.style.display = "none";
+
+                // Enable input fields for editing (entire table)
+                const inputs = document.querySelectorAll('#editable-table input[type="text"]');
+                inputs.forEach(input => {
+                    input.disabled = false; // Enable editing on each input field
+                });
+            } else {
+                // If the password is incorrect
+                errorMessage.style.display = "block";   // Show error message
+            }
+        }
+
+        // Add new row functionality
+        function addRow() {
+            let table = document.getElementById("editable-table").getElementsByTagName('tbody')[0];
+            let newRow = table.insertRow();
+
+            // Add 10 cells for data and one cell for actions
+            for (let i = 0; i < 10; i++) {
+                let newCell = newRow.insertCell(i);
+                let input = document.createElement("input");
+                input.type = "text";
+                newCell.appendChild(input);
+            }
+
+            // Add action buttons (save, delete)
+            let actionCell = newRow.insertCell(10);
+            let saveButton = document.createElement("button");
+            saveButton.textContent = "Save";
+            saveButton.onclick = function () {
+                saveRow(newRow);
+            };
+            actionCell.appendChild(saveButton);
+
+            // Add edit button
+            let editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.classList.add("edit-btn");
+            editButton.style.display = "none";  // Hidden by default
+            editButton.onclick = function () {
+                editRow(newRow);
+            };
+            actionCell.appendChild(editButton);
+
+            // Add delete button
+            let deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.classList.add("delete-btn");
+            deleteButton.style.display = "none";  // Hidden by default
+            deleteButton.onclick = function () {
+                deleteRow(newRow);
+            };
+            actionCell.appendChild(deleteButton);
+
+            saveTable(); // Save the table after adding a row
+        }
+
+        // Save the row after editing
+        function saveRow(row) {
+            let cells = row.getElementsByTagName("td");
+            for (let i = 0; i < 10; i++) {
+                let input = cells[i].getElementsByTagName("input")[0];
+                cells[i].textContent = input.value;
+            }
+            row.getElementsByTagName("button")[0].textContent = "Edit";
+            row.getElementsByTagName("button")[0].onclick = function () {
+                editRow(row);
+            };
+
+            saveTable(); // Save the table after saving a row
+        }
+
+        // Edit the row after saving
+        function editRow(row) {
+            let cells = row.getElementsByTagName("td");
+            for (let i = 0; i < 10; i++) {
+                let currentText = cells[i].textContent;
+                cells[i].textContent = "";
+                let input = document.createElement("input");
+                input.type = "text";
+                input.value = currentText;
+                cells[i].appendChild(input);
+            }
+            row.getElementsByTagName("button")[0].textContent = "Save";
+            row.getElementsByTagName("button")[0].onclick = function () {
+                saveRow(row);
+            };
+
+            // Add delete button in edit mode
+            let deleteButton = row.querySelector('.delete-btn');
+            if (deleteButton) {
+                deleteButton.style.display = "inline-block"; // Show delete button in edit mode
+            }
+
+            saveTable(); // Save the table after editing
+        }
+
+        // Function to save the table data into localStorage
+        function saveTable() {
+            const rows = document.querySelectorAll('#editable-table tbody tr');
+            let tableData = [];
+            
+            rows.forEach(row => {
+                let rowData = [];
+                let inputs = row.querySelectorAll('td input');
+                inputs.forEach(input => {
+                    rowData.push(input.value);
+                });
+                tableData.push(rowData);
+            });
+            
+            // Save table data to localStorage
+            localStorage.setItem('savedTableData', JSON.stringify(tableData));
+        }
+
+        // Function to load the table data from localStorage
+        function loadTableData() {
+            const savedTableData = localStorage.getItem('savedTableData');
+            if (savedTableData) {
+                const tableData = JSON.parse(savedTableData);
+                const tableBody = document.getElementById('editable-table').getElementsByTagName('tbody')[0];
+
+                // Clear existing rows
+                tableBody.innerHTML = '';
+
+                // Add saved rows
+                tableData.forEach(rowData => {
+                    let row = tableBody.insertRow();
+                    rowData.forEach(data => {
+                        let cell = row.insertCell();
+                        let input = document.createElement("input");
+                        input.type = "text";
+                        input.value = data;
+                        input.disabled = true; // Make inputs read-only by default
+                        cell.appendChild(input);
+                    });
+                    let actionCell = row.insertCell();
+                    let editButton = document.createElement("button");
+                    editButton.textContent = "Edit";
+                    editButton.classList.add("edit-btn");
+                    editButton.style.display = "none";  // Hidden by default
+                    editButton.onclick = function () {
+                        editRow(row);
+                    };
+                    actionCell.appendChild(editButton);
+                    
+                    // Add delete button to the row in edit mode
+                    let deleteButton = document.createElement("button");
+                    deleteButton.textContent = "Delete";
+                    deleteButton.classList.add("delete-btn");
+                    deleteButton.onclick = function () {
+                        deleteRow(row);
+                    };
+                    deleteButton.style.display = "none";  // Hidden by default
+                    actionCell.appendChild(deleteButton);
+                });
+            }
+        }
+
+        // Function to delete a row
+        function deleteRow(row) {
+            let table = document.getElementById('editable-table').getElementsByTagName('tbody')[0];
+            table.deleteRow(row.rowIndex - 1);  // Adjust for the header row
+
+            saveTable(); // Save the updated table after row deletion
+        }
+    </script>
+
+    <!-- Footer Section -->
+    <div id="footer">
+        Made by the coolest dude in P7 Nathan Sloan!
+        <span>😎</span>
+    </div>
+
+</body>
+</html>
